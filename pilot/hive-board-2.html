@@ -1,0 +1,253 @@
+<html>
+	<head>
+		<meta charset="UTF-8">
+		<script src="jquery-2.1.0.js"></script>
+		<script type="text/javascript">
+			function HiveGridCell(i, j, letter) {
+				this.i = i;
+				this.j = j;
+				this.letter = letter;
+				this.selected = false;
+				this.owner = null;
+				
+				this.dist = function(x, y) {
+					return Math.sqrt((this.x - x) * (this.x - x) + (this.y - y) * (this.y - y));
+				}
+			}
+			
+			function HiveGrid(width, numCellX, numLevelY) {
+				this.numCellX = numCellX;
+				this.numLevelY = numLevelY;
+				this.numCellY = numLevelY * 2 + 1;
+				this.width = width;
+
+				this.side = width / (Math.sqrt(3) * (numCellX + 1 / 2));
+				this.height = (this.numLevelY * 3 - 1) * this.side + 1;
+
+				this.smallestWidth =  width / (numCellX + 1 /2); // Math.sqrt(3) * side;
+				this.largestWidth = 2 * this.side;
+				this.inradius = this.smallestWidth / 2;
+				this.circumRadius = this.side;
+				this.halfSide = this.side / 2;
+
+				this.coordinates = function coordinates(x, y) {
+					var cy = Math.floor(y / (3 * this.side)) * 2;
+					if (Math.floor(y / this.side) % 3 <= 1) {
+						cx = Math.floor(x / this.smallestWidth);
+					}
+					else {
+						cx = Math.floor((x - this.halfSide)/ this.smallestWidth);
+						cy++;
+					}
+					var cell = null;
+					if (cx >= 0 && cx < this.numCellX && cy >= 0 && cy < this.numCellY) {
+						cell = this.cells[cx][cy];
+						if ((cell.x - x) * (cell.x - x) + (cell.y - y) * (cell.y - y) > this.side * this.side / 4) {
+							cell = null;
+						}
+					}
+					return cell;
+				}
+				
+				this.randomise = function () {
+					/* Italian */
+					this.alphabet = ['a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v','w','y','z','à','è','ì','ò','ù'];
+					this.frequency = [0.1175,0.0093,0.0450,0.0374,0.1179,0.0115,0.0164,0.0064,0.1128,0.0001,0.0001,0.0651,0.0251,0.0688,0.0983,0.0306,0.0051,0.0637,0.0498,0.0562,0.0301,0.0210,0.0003,0.0002,0.0118,0.0064,0.0026,0.0003,0.0000,0.0017];
+					this.cumulative = [];
+					var cumul = 0;
+					for (var i = 0; i < this.frequency.length; i++) {
+						cumul += this.frequency[i];
+						this.cumulative[i] = cumul;
+					}
+					for (var i = 0; i < this.frequency.length; i++) {
+						this.cumulative[i] = this.cumulative[i] / cumul;
+					}
+					
+					/* English */
+					//this.alphabet = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'x', 'y', 'w', 'z'];
+					//this.frequency = [0.116,0.047,0.0351,0.0267,0.0201,0.0378,0.0195,0.0723,0.0629,0.006,0.0059,0.0271,0.0437,0.0237,0.0626,0.0255,0.0017,0.0165,0.0776,0.1667,0.0149,0.0065,0.0675,0.0001,0.0162,0.0003];
+
+					this.cells = new Array();
+
+					for (var i = 0; i < this.numCellX; i++) {
+						this.cells[i] = new Array();
+						for (var j = 0; j < this.numCellY; j++) {
+							var rand = Math.random();
+							var k = 0;
+							/* TODO: use binary search */
+							while (this.cumulative[k] < rand) {
+								k++;
+								if (k > this.cumulative.length) break;
+							}
+							var cell = new HiveGridCell(i, j, this.alphabet[k]);
+							cell.x = (i + (j % 2 == 0 ? 0.5 : 1)) * this.smallestWidth;
+							cell.y = j * 1.5 * this.side + this.side;
+							this.cells[i][j] = cell;
+						}
+					}
+				}
+			};
+			
+			function GameStatus() {
+				this.mousedown = false;
+				this.word = new Array();
+			};
+			
+			function zigZag(ctx, inradius, width, y1, y2) {
+				var y = y2;
+				for (var x = inradius; x <= width; x += inradius) {
+					ctx.lineTo(x, y);
+					if (y == y2) {
+						y = y1;
+					}
+					else { 
+						y = y2;
+					}
+				}
+			}
+
+			function vertical(ctx, x1, x2, y1, y2, smallestWidth) {
+				for (var x = x1; x <= x2; x += smallestWidth) {
+					ctx.moveTo(x, y1);
+					ctx.lineTo(x, y2);
+				}
+			}
+			
+			function drawMatrix (canvas, ctx, hiveGrid) {
+				canvas.height = hiveGrid.height;
+				canvas.width = hiveGrid.width;
+				
+				ctx.clearRect(0, 0, hiveGrid.width, hiveGrid.height);
+				ctx.strokeStyle = '#000000';
+				ctx.lineWidth = 1;
+				var line = 0;
+				for (var j = 0; j < hiveGrid.numLevelY; j++) {
+					y2 = 3 * hiveGrid.side * j;
+					y1 = y2 + hiveGrid.halfSide;
+
+					ctx.moveTo(0, y1);
+					zigZag(ctx, hiveGrid.inradius, hiveGrid.width, y1, y2);
+					vertical(ctx, 0, hiveGrid.width, y1, y1 + hiveGrid.side, hiveGrid.smallestWidth);
+					vertical(ctx, hiveGrid.smallestWidth / 2, hiveGrid.width + 1, y2 + 2 * hiveGrid.side, y2 + 3 * hiveGrid.side, hiveGrid.smallestWidth);
+					y1 += hiveGrid.side;
+					y2 += 2 * hiveGrid.side;
+					ctx.moveTo(0, y1);
+					zigZag(ctx, hiveGrid.inradius, hiveGrid.width, y1, y2);
+				}
+				
+				for (var i = 0; i < hiveGrid.numCellX; i++) {
+					for (var j = 0; j < hiveGrid.numCellY; j++) {
+						var cell = hiveGrid.cells[i][j];
+						ctx.font = "18px arial";
+						ctx.fillText(cell.letter, cell.x - 4, cell.y + 4);
+					}
+				}
+				
+				ctx.stroke();
+				console.log("Done");
+			}
+			
+			function onReady() {
+				var canvas = $("#gameGrid")[0];
+				var ctx = canvas.getContext("2d");
+				var hiveGrid = new HiveGrid(canvas.width, 10, 50);
+				hiveGrid.randomise();
+				
+				var gameStatus = new GameStatus();
+				
+				drawMatrix(canvas, ctx, hiveGrid);
+
+				function clickOrMove(e) {
+					var cell = hiveGrid.coordinates(e.pageX - 8 , e.pageY - 8, hiveGrid.side);
+					if (cell != null && gameStatus.mousedown) {
+						if (!cell.selected) {
+							gameStatus.word.push(cell);
+							$.event.trigger({type: "graph.cellSelected", cell: cell, status: true});
+						}
+						cell.selected = true;
+					}
+				}		
+				
+				$("#gameGrid").mousedown(function(e){
+					gameStatus.word = new Array();
+					gameStatus.mousedown = true;
+					clickOrMove(e);
+				});
+
+				$("#gameGrid").mouseout(function(e){
+					gameStatus.mousedown = false;
+				});
+				
+				$("#gameGrid").mouseup(function(e){
+					if (Math.random() > 0.66) {
+						$.event.trigger({type: "foundWord", word: gameStatus.word});
+					}
+					else {
+						$.event.trigger({type: "rejectWord", word: gameStatus.word});
+					}
+					
+					for (var i = 0; i < gameStatus.word.length; i++) {
+						gameStatus.word.selected = false;
+					}
+					gameStatus.mousedown = false;
+				});
+				
+				$("#gameGrid").mousemove(function(e) {
+					var cell = e.cell;
+					if (gameStatus.mousedown) {
+						if (gameStatus.word.length > 0 && gameStatus.word[gameStatus.word.length - 1].dist(e.pageX - 8 , e.pageY - 8) > hiveGrid.smallestWidth * 1.2) {
+							new Audio("beep18.mp3").play();
+							
+							return;
+						}
+					}
+					clickOrMove(e);
+				});
+				
+				$(document).on("foundWord", function(e) {
+					var word = gameStatus.word;
+					for (var n = 0; n < word.length; n++) {
+						var cell = word[n];
+						cell.owner = gameStatus.currentPlayer;
+						$.event.trigger({type: "graph.cellOwned", cell: cell});
+					}
+				});
+				
+				$(document).on("rejectWord", function(e) {
+					var word = gameStatus.word;
+					for (var n = 0; n < word.length; n++) {
+						var cell = word[n];
+						cell.selected = false;
+						$.event.trigger({type: "graph.cellSelected", cell: cell, status: false});
+					}
+				});
+				
+				$(document).on("graph.cellSelected", function(e) {
+					var cell = e.cell;
+					var status = e.status;
+					ctx.beginPath();
+					ctx.arc(cell.x,cell.y, status ? hiveGrid.side * 0.75 : hiveGrid.side * 0.75, 0, 2 * Math.PI);
+					ctx.lineWidth = status? 2 : 4;
+					ctx.strokeStyle = status ? "red" : "white";
+					ctx.stroke();
+				});
+
+				$(document).on("graph.cellOwned", function(e) {
+					var cell = e.cell;
+					ctx.beginPath();
+					ctx.arc(cell.x,cell.y,hiveGrid.side * 0.8, 0, 2 * Math.PI);
+					ctx.lineWidth = 2;
+					ctx.strokeStyle = "blue";
+					ctx.stroke();
+				});
+			}
+			
+			$(function() {
+				onReady();
+			});
+		</script>
+	</head>
+	<body>
+		<canvas style="position: absolute; x: 0, y: 0" id="gameGrid" width="500" height="0" ></canvas> 	
+    </body>
+</html>

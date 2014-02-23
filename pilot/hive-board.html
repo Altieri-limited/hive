@@ -1,0 +1,71 @@
+<html>
+	<head>
+		<script src="jquery-2.1.0.js"></script>
+		<script type="text/javascript">
+			function zigZag(ctx, inradius, width, y1, y2) {
+				var y = y2;
+				for (var x = inradius; x <= width; x += inradius) {
+					ctx.lineTo(x, y);
+					if (y == y2) {
+						y = y1;
+					}
+					else { 
+						y = y2;
+					}
+				}
+			}
+
+			function vertical(ctx, x1, x2, y1, y2, smallestWidth) {
+				for (var x = x1; x <= x2; x += smallestWidth) {
+					ctx.moveTo(x, y1);
+					ctx.lineTo(x, y2);
+				}
+			}
+
+			function drawMatrix (ctx, width, numCellX, numLevelsY) {
+				var side = width / (Math.sqrt(3) * numCellX);
+				var smallestWidth =  width / numCellX; // Math.sqrt(3) * side;
+				var largestWidth = 2 * side;
+				var inradius = smallestWidth / 2;
+				var circumRadius = side;
+				var halfSide = side / 2;
+
+				var height = (numLevelsY * 3 - 1) * side;
+
+				ctx.clearRect(0, 0, width, height);
+				ctx.strokeStyle = '#000000';
+				ctx.lineWidth = 1;
+				var line = 0;
+				for (var j = 0; j < numLevelsY; j++) {
+					y2 = 3 * side * j; 
+					y1 = y2 + halfSide;
+
+					ctx.moveTo(0, y1);
+					zigZag(ctx, inradius, width, y1, y2);
+					vertical(ctx, 0, width, y1, y1 + side, smallestWidth);
+					vertical(ctx, smallestWidth / 2, width - smallestWidth / 2, y2 + 2 * side, y2 + 3 * side, smallestWidth);
+					y1 += side;
+					y2 += 2 * side;
+					ctx.moveTo(0, y1);
+					zigZag(ctx, inradius, width, y1, y2);
+				}				
+				ctx.stroke();
+				console.log("Done");
+			}
+			
+			function onReady() {
+				var canvas = $("#gameGrid")[0];
+				var ctx = canvas.getContext("2d");
+				
+				drawMatrix(ctx, 300, 10, 10);
+			}
+
+			$(function() {
+				onReady();
+			});
+		</script>
+	</head>
+	<body>
+		<canvas id="gameGrid" width="300" height="300" style="border: 1px solid black"></canvas> 	
+    </body>
+</html>
