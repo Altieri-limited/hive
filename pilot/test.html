@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8">
+		<script src="jquery-2.1.0.js"></script>
+		<script type="text/javascript">
+	// READ DICTIONARY			
+	function readSingleFile(evt) {
+		//Retrieve the first (and only!) File from the FileList object
+//		var f = new File(evt.target.files[0]);
+		console.log(evt.target.files[0]);
+	}
+
+	$("#fileinput").on("change", readSingleFile, false);
+	
+	
+		</script>
+	</head>
+	<body>
+		<canvas style="position: absolute;" id="gameGrid" width="500" height="0" ></canvas> 	
+		<input style="position: absolute; left: 1000px" type="file" id="fileinput" />
+    </body>
+</html>
