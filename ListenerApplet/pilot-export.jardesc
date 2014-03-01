@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<jardesc>
+    <jar path="C:/Projects/hive/pilot/pilot.jar" />
+    <options buildIfNeeded="true" compress="false" descriptionLocation="/ListenerApplet/pilot-export.jardesc" exportErrors="true" exportWarnings="true" includeDirectoryEntries="true" overwrite="true" saveDescription="true" storeRefactorings="false" useSourceFolders="false"/>
+    <storedRefactorings deprecationInfo="true" structuralOnly="false"/>
+    <selectedProjects/>
+    <manifest generateManifest="false" manifestLocation="/ListenerApplet/MANIFEST.MF" manifestVersion="1.0" reuseManifest="true" saveManifest="true" usesManifest="true">
+        <sealing sealJar="true">
+            <packagesToSeal/>
+            <packagesToUnSeal/>
+        </sealing>
+    </manifest>
+    <selectedElements exportClassFiles="false" exportJavaFiles="false" exportOutputFolder="true">
+        <javaElement handleIdentifier="=ListenerApplet/src\/test\/java"/>
+        <javaElement handleIdentifier="=ListenerApplet/src\/main\/java"/>
+        <file path="/ListenerApplet/pom.xml"/>
+        <file path="/ListenerApplet/.project"/>
+        <file path="/ListenerApplet/.classpath"/>
+        <folder path="/ListenerApplet/src"/>
+    </selectedElements>
+</jardesc>
