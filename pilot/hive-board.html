@@ -1,9 +1,150 @@
-<html>
-	<head>
+<html>	
+    <head>
 		<meta charset="UTF-8">
 		<script src="jquery-2.1.0.js"></script>
 		<script type="text/javascript">
 
+    /* Union-Find: Weighted Quick Union */
+    function WeigthedQuickUnion(N) {
+        this.count = N;
+        this.id = [];
+        this.sz = [];
+        for (var i = 0; i < N; i++) {
+            this.id[i] = i;
+            this.sz[i] = 1;
+        }
+        
+        /* Return the number of components */
+        this.getNumOfComponents = function getNumOfComponents_() {
+            return this.count;
+        }
+
+        /*
+         * Returns the component identifier for the component containing cell p.
+         */
+        this.find = function find_(p) {
+            while (p != this.id[p]) {
+                p = this.id[p];
+            }
+            
+            return p;
+        }
+
+        /*
+         * Are the two cells p and q in the same component?
+         */
+        this.connected = function connected_(p, q) {
+            return this.find(p) == this.find(q);
+        }
+      
+        /*
+         * Merges the component containing cell p with the component containing cell q.
+         */
+        this.union = function union_(p, q) {
+            var rootP = this.find(p);
+            var rootQ = this.find(q);
+            if (rootP == rootQ) return;
+
+            // make smaller root point to larger one
+            if   (this.sz[rootP] < this.sz[rootQ]) { 
+                this.id[rootP] = rootQ; 
+                this.sz[rootQ] += this.sz[rootP]; 
+            }
+            else { 
+                this.id[rootQ] = rootP; 
+                this.sz[rootP] += this.sz[rootQ]; 
+            }
+            
+            this.count--;
+        }
+    }
+    
+    function HivePercolation(width, height) {
+        this.width = width;
+        this.height = height;
+
+        this.model = new Array();
+        for (var i = 0; i < width; i++) {
+            this.model[i] = new Array();
+            for (var j = 0; j < width; j++) {
+                this.model[i][j] = false;
+            }
+        }
+        
+        this.topVirtualSite = width * height + 1;
+        this.bottomVirtualSite = width * height;
+        this.alg = new WeigthedQuickUnion(width * height + 2);
+        
+        this.getModelIndex = function getModelIndex_(i, j) {
+            if (i < 0 || i >= this.width || j < 0 || j >= this.height) {
+                throw "Wrong index";
+            }
+
+            return i * this.height + j;
+        }
+
+        this.checkAdjecent = function checkAdjecent_(i, j, modelIndex, ii, jj) {
+            console.log(i, j, i + ii, j + jj);
+//            console.log((i + ii) + ", " + (j + jj) + ": " + (i + ii) >= 0 && (i + ii) < this.width && (j + jj) >= 0 && (j + jj) < this.height);
+            if ((i + ii) >= 0 && (i + ii) < this.width && (j + jj) >= 0 && (j + jj) < this.height) {
+//                console.log((i + ii) + ", " + (j + jj) + ": " + this.isOpen(i + ii, j + jj));
+                if (this.isOpen(i + ii, j + jj)) {
+//                    console.log("union: " + modelIndex + ", " + modelIndex + this.height * ii + jj);
+                    this.alg.union(modelIndex, modelIndex + this.height * ii + jj);
+                }
+            }
+        }
+        
+        this.open = function open_(i, j) {
+            var modelIndex = this.getModelIndex(i, j);
+
+            this.model[i][j] = true;
+            if (i == 0) {
+                this.alg.union(this.bottomVirtualSite, modelIndex);
+            }
+            else if (i == this.width - 1) {
+                this.alg.union(this.topVirtualSite, modelIndex);
+            }
+            
+            this.checkAdjecent(i, j, modelIndex, -1, 0);
+            this.checkAdjecent(i, j, modelIndex, 1, 0);
+            this.checkAdjecent(i, j, modelIndex, 0, -1);
+            this.checkAdjecent(i, j, modelIndex, 0, 1);
+            if (j % 2 == 0) {
+                this.checkAdjecent(i, j, modelIndex, -1, 1);
+                this.checkAdjecent(i, j, modelIndex, -1, -1);
+            }
+            else {
+                this.checkAdjecent(i, j, modelIndex, 1, 1);
+                this.checkAdjecent(i, j, modelIndex, 1, -1);
+            }
+        }
+
+        this.isOpen = function isOpen_(i, j) {
+            return this.model[i][j];
+        }
+
+        this.isFull = function isFull_(i, j) {
+            var connected = this.alg.connected(this.getModelIndex(i, j), this.bottomVirtualSite);
+            return connected;
+        }
+
+        this.percolates = function percolates_() {
+            return this.alg.connected(this.topVirtualSite, this.bottomVirtualSite);
+        }
+        
+        this.print = function print_() {
+            for (var j = 0; j <= this.height - 1; j++) {
+                var s = "";
+                for (var i = 0; i <= this.width - 1; i++) {
+                    s += (this.model[i][j]? "O" : "C") + (this.alg.connected(this.getModelIndex(i, j), this.bottomVirtualSite) ? "+" : "-") + " ";
+                }
+                console.log(s);
+            }
+        }
+    }
+    
+    /* Hive Grid */
 	function HiveGridCell(i, j, letter) {
 		this.i = i;
 		this.j = j;
@@ -16,7 +157,9 @@
 		}
 	}
 	
-	function HiveGrid(width, numCellX, numLevelY) {
+	function HiveGrid(canvas, width, numCellX, numLevelY) {
+        this.canvas = canvas;
+        this.ctx = canvas.getContext("2d");
 		this.numCellX = numCellX;
 		this.numLevelY = numLevelY;
 		this.numCellY = numLevelY * 2 + 1;
@@ -25,7 +168,7 @@
 		this.side = width / (Math.sqrt(3) * (numCellX + 1 / 2));
 		this.height = (this.numLevelY * 3 - 1) * this.side + 1;
 
-		this.smallestWidth =  width / (numCellX + 1 /2); // Math.sqrt(3) * side;
+		this.smallestWidth =  width / (numCellX + 1 /2);
 		this.largestWidth = 2 * this.side;
 		this.inradius = this.smallestWidth / 2;
 		this.circumRadius = this.side;
@@ -87,10 +230,33 @@
 				}
 			}
 		}
+        
+        this.cellOwned = function cellOwned_ (cell) {
+            this.ctx.beginPath();
+            this.ctx.arc(cell.x + 2, cell.y - 2, this.side * 0.5, 0, 2 * Math.PI);
+            this.ctx.lineWidth = 2;
+            this.ctx.strokeStyle = me.currentPlayerColor();
+            this.ctx.stroke();
 
+            this.ctx.beginPath();
+            this.ctx.arc(cell.x,cell.y, this.side * 0.75, 0, 2 * Math.PI);
+            this.ctx.strokeStyle = "white";
+            this.ctx.lineWidth = 4;
+            this.ctx.stroke();
+        }
+        
+        this.selectCell = function selectCell_(cell, status) {
+            this.ctx.beginPath();
+            this.ctx.arc(cell.x,cell.y, status ? this.side * 0.75 : this.side * 0.75, 0, 2 * Math.PI);
+            this.ctx.lineWidth = status? 2 : 4;
+            this.ctx.strokeStyle = status ? "red" : "white";
+            this.ctx.stroke();
+        }
+        
 		function zigZag(ctx, inradius, width, y1, y2) {
 			var y = y2;
-			for (var x = inradius; x <= width; x += inradius) {
+            /* <= width + 1 for approximations */
+			for (var x = inradius; x <= width + 1; x += inradius) {
 				ctx.lineTo(x, y);
 				if (y == y2) {
 					y = y1;
@@ -108,10 +274,11 @@
 			}
 		}
 	
-		this.draw = function draw (canvas, ctx) {
-			canvas.height = this.height;
+		this.draw = function draw () {
+			this.canvas.height = this.height;
 			canvas.width = this.width;
-			
+            var ctx = this.ctx;
+            
 			ctx.clearRect(0, 0, this.width, this.height);
 			ctx.strokeStyle = '#000000';
 			ctx.lineWidth = 1;
@@ -122,19 +289,23 @@
 
 				ctx.moveTo(0, y1);
 				zigZag(ctx, this.inradius, this.width, y1, y2);
+                ctx.stroke();
 				vertical(ctx, 0, this.width, y1, y1 + this.side, this.smallestWidth);
+                ctx.stroke();
 				vertical(ctx, this.smallestWidth / 2, this.width + 1, y2 + 2 * this.side, y2 + 3 * this.side, this.smallestWidth);
+                ctx.stroke();
 				y1 += this.side;
 				y2 += 2 * this.side;
 				ctx.moveTo(0, y1);
 				zigZag(ctx, this.inradius, this.width, y1, y2);
+                ctx.stroke();
 			}
 			
 			for (var i = 0; i < this.numCellX; i++) {
 				for (var j = 0; j < this.numCellY; j++) {
 					var cell = this.cells[i][j];
 					ctx.font = "18px arial";
-					ctx.fillText(cell.letter, cell.x - 4, cell.y + 4);
+					ctx.fillText(cell.letter + " " +    i + "," + j, cell.x - 4, cell.y + 4);
 				}
 			}
 			
@@ -142,118 +313,8 @@
 			console.log("Done");
 		}
 	};
-	
-	function GameStatus() {
-		this.mousedown = false;
-		this.word = new Array();
-	};
-		
-	function onReady(trie) {
-		var canvas = $("#gameGrid")[0];
-		var ctx = canvas.getContext("2d");
-		var hiveGrid = new HiveGrid(canvas.width, 10, 50);
-		hiveGrid.randomise();
-		
-		var gameStatus = new GameStatus();
-		
-		hiveGrid.draw(canvas, ctx);
 
-		function clickOrMove(e) {
-			var cell = hiveGrid.coordinates(e.pageX - 8 , e.pageY - 8, hiveGrid.side);
-			if (cell != null && gameStatus.mousedown) {
-				if (!cell.selected) {
-					gameStatus.word.push(cell);
-					$.event.trigger({type: "graph.cellSelected", cell: cell, status: true});
-				}
-				cell.selected = true;
-			}
-		}		
-		
-		$("#gameGrid").mousedown(function(e){
-			gameStatus.word = new Array();
-			gameStatus.mousedown = true;
-			clickOrMove(e);
-		});
-
-		$("#gameGrid").mouseout(function(e){
-			gameStatus.mousedown = false;
-			$.event.trigger({type: "rejectWord", word: gameStatus.word});
-		});
-		
-		$("#gameGrid").mouseup(function(e){
-			var wordTxt = "";
-			for (var i = 0; i < gameStatus.word.length; i++) {
-				gameStatus.word[i].selected = false;
-				wordTxt += gameStatus.word[i].letter;
-			}
-			if (wordTxt == "") return;
-			var cellFound = trie.get(wordTxt);
-			if (cellFound != null && cellFound.value != null) {
-				$.event.trigger({type: "foundWord", word: gameStatus.word});
-			}
-			else {
-				$.event.trigger({type: "rejectWord", word: gameStatus.word});
-			}
-			
-			gameStatus.mousedown = false;
-		});
-		
-		$("#gameGrid").mousemove(function(e) {
-			var cell = e.cell;
-			if (gameStatus.mousedown) {
-				if (gameStatus.word.length > 0 && gameStatus.word[gameStatus.word.length - 1].dist(e.pageX - 8 , e.pageY - 8) > hiveGrid.smallestWidth * 1.2) {
-					new Audio("beep18.mp3").play();
-					
-					return;
-				}
-			}
-			clickOrMove(e);
-		});
-		
-		$(document).on("foundWord", function(e) {
-			var word = gameStatus.word;
-			for (var n = 0; n < word.length; n++) {
-				var cell = word[n];
-				cell.owner = gameStatus.currentPlayer;
-				$.event.trigger({type: "graph.cellOwned", cell: cell});
-			}
-		});
-		
-		$(document).on("rejectWord", function(e) {
-			var word = gameStatus.word;
-			for (var n = 0; n < word.length; n++) {
-				var cell = word[n];
-				cell.selected = false;
-				$.event.trigger({type: "graph.cellSelected", cell: cell, status: false});
-			}
-		});
-		
-		$(document).on("graph.cellSelected", function(e) {
-			var cell = e.cell;
-			var status = e.status;
-			ctx.beginPath();
-			ctx.arc(cell.x,cell.y, status ? hiveGrid.side * 0.75 : hiveGrid.side * 0.75, 0, 2 * Math.PI);
-			ctx.lineWidth = status? 2 : 4;
-			ctx.strokeStyle = status ? "red" : "white";
-			ctx.stroke();
-		});
-
-		$(document).on("graph.cellOwned", function(e) {
-			var cell = e.cell;
-			ctx.beginPath();
-			ctx.arc(cell.x + 2, cell.y - 2, hiveGrid.side * 0.4, 0, 2 * Math.PI);
-			ctx.lineWidth = 2;
-			ctx.strokeStyle = "blue";
-			ctx.stroke();
-
-			ctx.beginPath();
-			ctx.arc(cell.x,cell.y, hiveGrid.side * 0.75, 0, 2 * Math.PI);
-			ctx.strokeStyle = "white";
-			ctx.lineWidth = 4;
-			ctx.stroke();
-		});
-	}
-	
+    /* Tries */
 	function TrieNode() {
         this.next = new Array(256);
 		this.value = null;
@@ -325,23 +386,199 @@
 			if (x == null) {
 				x = new TrieNode();
 			}
+			var c = key.charCodeAt(d);
 			if (d == key.length) {
 				x.value = val;
 
 				return x;
 			}
-			var c = key.charCodeAt(d);
 			x.next[c] = this.putRecursive(x.getNext(c), key, val, d + 1);
 
 			return x;
 		}
 	}
 
+    /* Game */
+    function Player(name) {
+        this.name = name;
+
+        this.setPercolation = function setPercolation_(percolation) {
+            this.percolation = percolation;
+        }
+    }
+    
+	function GameStatus(hiveGrid) {
+        this.hiveGrid = hiveGrid;
+		this.mousedown = false;
+		this.word = new Array();
+        this.player1 = new Player("Player 1");
+        this.player2 = new Player("Player 2");
+        me = this;
+        
+        this.startMatch = function startMatch_() {
+            this.player1.setPercolation(new HivePercolation(hiveGrid.numCellX, hiveGrid.numCellY));
+            this.player2.setPercolation(new HivePercolation(hiveGrid.numCellX, hiveGrid.numCellY));
+            this.currentPlayer = this.player1;
+        }
+        
+        this.checkTimer = function toggleUser_() {
+            setTimeout(
+                function () {
+                    me.playerCounter--;
+                    if (me.playerCounter == 0) { 
+                        me.mousedown = false;
+                        $.event.trigger({type: "rejectWord", word: me.word});
+                        me.currentPlayer = me.currentPlayer == me.player1 ? me.player2 : me.player1;
+                        this.mousedown = false;
+                        me.playerCounter = 30;
+                        alert("E' il turno di: " + me.currentPlayer.name);
+                    }
+                    me.checkTimer();
+                }, 1000);
+        }
+
+        this.currentPlayerColor = function currentPlayerColor_() {
+            return this.currentPlayer == this.player1 ? 'blue' : 'green';
+        }
+        
+        this.onMouseUp = function onMouseUp_(e) {
+			var wordTxt = "";
+			for (var i = 0; i < me.word.length; i++) {
+				me.word[i].selected = false;
+				wordTxt += me.word[i].letter;
+			}
+			if (wordTxt == "") return;
+			var cellFound = me.trie.get(wordTxt);
+			if (cellFound != null && cellFound.value != null) {
+				$.event.trigger({type: "foundWord", word: me.word});
+			}
+			else {
+				$.event.trigger({type: "rejectWord", word: me.word});
+			}
+			
+			me.mousedown = false;
+		}
+        
+        this.onMouseDown = function(e){
+			me.word = new Array();
+			me.mousedown = true;
+			clickOrMove(e);
+		}
+        
+        this.onMouseMove = function(e) {
+			var cell = e.cell;
+			if (me.mousedown) {
+				if (me.word.length > 0 && me.word[me.word.length - 1].dist(e.pageX - 8 , e.pageY - 8) > hiveGrid.smallestWidth * 1.2) {
+					new Audio("beep18.mp3").play();
+					
+					return;
+				}
+			}
+			clickOrMove(e);
+		}
+
+        this.onMouseOut = function(e){
+			me.mousedown = false;
+			$.event.trigger({type: "rejectWord", word: me.word});
+		}
+        
+		function clickOrMove(e) {
+			var cell = hiveGrid.coordinates(e.pageX - 8 , e.pageY - 8, hiveGrid.side);
+
+			if (cell != null && me.mousedown) {
+				if (!cell.selected) {
+					me.word.push(cell);
+					$.event.trigger({type: "graph.cellSelected", cell: cell, status: true});
+				}
+				cell.selected = true;
+			}
+		}
+
+        this.restart = function () {
+            hiveGrid.randomise();
+            hiveGrid.draw();
+            me.playerCounter = 30;
+            this.startMatch();
+        }
+        
+        this.setTrie = function setTrie_(trie) {
+            this.trie = trie;
+        }
+        
+        /* Initialisation */
+        this.initialise = function initialise_(trie) {
+            this.trie = trie;
+
+            $("#gameGrid").mousedown(this.onMouseDown);
+            $("#gameGrid").mouseout(this.onMouseOut);
+            $("#gameGrid").mouseup(this.onMouseUp);
+            $("#gameGrid").mousemove(this.onMouseMove);
+            
+            $(document).on("foundWord", function(e) {
+                var word = me.word;
+                var wrongCell = false;
+                for (var n = 0; n < word.length; n++) {
+                    var cell = word[n];
+                    if (cell.owner != null && cell.owner != me.currentPlayer) {
+                        wrongCell = true;
+                        $.event.trigger({type: "rejectWord", word: me.word});
+                        break;
+                    }
+                }
+                if (!wrongCell) {
+                    $.event.trigger({type: "selectWord"});
+                }
+            });
+            
+            $(document).on("selectWord", function(e) {
+                var word = me.word;
+                for (var n = 0; n < word.length; n++) {
+                    var cell = word[n];
+                    cell.owner = me.currentPlayer;
+                    $.event.trigger({type: "graph.cellOwned", cell: cell});
+                }
+            });
+            
+            $(document).on("rejectWord", function(e) {
+                var word = me.word;
+                for (var n = 0; n < word.length; n++) {
+                    var cell = word[n];
+                    cell.selected = false;
+                    $.event.trigger({type: "graph.cellSelected", cell: cell, status: false});
+                }
+            });
+            
+            $(document).on("graph.cellSelected", function(e) {
+                var cell = e.cell;
+                var status = e.status;
+                hiveGrid.selectCell(cell, status);
+            });
+
+            $(document).on("graph.cellOwned", function(e) {
+                var cell = e.cell;
+                hiveGrid.cellOwned(cell);
+                me.currentPlayer.percolation.open(e.cell.i, e.cell.j);
+                if (me.currentPlayer.percolation.percolates()) {
+                    alert(me.currentPlayer.name + " Won!!");
+                }
+            });
+        }
+    };
+
+
 	// READ DICTIONARY			
-	function readSingleFile(evt) {
+	function initialiseDictionary(evt) {
 		var f = evt.target.files[0]; 
 		var trie = new Trie();
 
+        alphabet = ['A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R','S','T','U','V','W','Y','Z'];
+        for (var i = 0; i < alphabet.length; i++) {
+            for (var j = 0; j < alphabet.length; j++) {
+                var w = alphabet[i] + alphabet[j];
+                trie.put(w, w);
+            }
+        }
+        
 		if (f) {
 			var r = new FileReader();
 			r.onload = function(e) { 
@@ -349,13 +586,13 @@
 				var dictionary = txt.split("\n");
 				for (var n = 0; n < dictionary.length; n++) {
 					var word = dictionary[n];
+                    if (word.charCodeAt(word.length - 1) == 13) {
+                        word = word.substring(0, word.length - 1);
+                    }
 					if (word.length > 2 && word.length <= 20) {
 						trie.put(word.toUpperCase(), word);
 					}
 				}
-				
-				console.log("complete");
-				onReady(trie);
 			}
 			r.onerror = function(evt) {
 				console.log(evt);
@@ -365,27 +602,44 @@
 		else { 
 			alert("Failed to load file");
 		}
-		
+        
+        return trie;
+
 	}
-
+    
 	$(function() {
-		$("#fileinput").on("change", readSingleFile);
-	});
+        var canvas = $("#gameGrid")[0];
+        var hiveGrid = new HiveGrid(canvas, canvas.width, 8, 3);
+        var gameStatus = new GameStatus(hiveGrid);
+        gameStatus.initialise();
+        gameStatus.checkTimer();
 
+		$("#fileinput").on("change", function (e) {
+            var trie = initialiseDictionary(e);
+            gameStatus.setTrie(trie);
+            gameStatus.restart();
+        });
+        
+		$("#restart-button").on("click", function (e) {
+            gameStatus.restart();
+        });
+
+		$("#toggle-user-button").on("click", function (e) {
+            gameStatus.playerCounter = 1;
+        });
+       
+        
+    });
 	
 	
-		</script>
+	</script>
 	</head>
 	<body>
-
-		<canvas style="position: absolute;" id="gameGrid" width="500" height="0" ></canvas> 	
-		<input style="position: absolute; left: 1000px" type="file" id="fileinput" />
-
-		<object id="listener"  width="300" height="100" type="application/x-java-applet">
-		  <param name="code" value="pilot.ListenerMain" />
-		  <param name="archive" value="pilot.jar" />
-		  Applet failed to run.  No Java plug-in was found.
-		</object>
-
+		<canvas style="position: absolute;" id="gameGrid" width="900" height="0" ></canvas>
+        <div style="position: absolute; bottom: 40px"> 
+            <input type="file" id="fileinput" />
+            <input value="Riparti" type="button" id="restart-button" />
+            <input value="Cambia utente" type="button" id="toggle-user-button" />
+        </div>
 	</body>
 </html>

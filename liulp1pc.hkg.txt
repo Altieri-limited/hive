@@ -1,0 +1,31 @@
+﻿Percolation e refactoring
+
+# Please enter the commit message for your changes. Lines starting
+# with '#' will be ignored, and an empty message aborts the commit.
+# On branch pilot-applet
+# Changes to be committed:
+#   (use "git reset HEAD <file>..." to unstage)
+#
+#	new file:   ListenerApplet/jar-sign.bat
+#	new file:   ListenerApplet/pilot
+#	new file:   ListenerApplet/pilotKeyStore
+#	modified:   ListenerApplet/pom.xml
+#	modified:   ListenerApplet/src/main/java/pilot/ListenerMain.java
+#	new file:   ListenerApplet/src/main/resources/META-INF/MANIFEST.MF
+#	new file:   pilot/dictionaries/italian_lemma - Copy.txt
+#	new file:   pilot/dictionaries/italian_lemma-openoffice.txt
+#	new file:   pilot/dictionaries/italian_lemma.txt
+#	modified:   pilot/hive-board.html
+#	modified:   pilot/pilot.jar
+#
+# Changes not staged for commit:
+#   (use "git add/rm <file>..." to update what will be committed)
+#   (use "git checkout -- <file>..." to discard changes in working directory)
+#
+#	deleted:    ListenerApplet/MANIFEST.MF
+#	deleted:    pilot/dictionaries/italian_lemma - Copy.txt
+#	deleted:    pilot/italian_lemma.txt
+#	deleted:    pilot/jar-sign.bat
+#	deleted:    pilot/pilotKeyStore
+#
+
