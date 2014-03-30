@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.ObjectInputStream;
 import java.io.PrintWriter;
+import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.security.AccessController;
@@ -30,10 +31,9 @@ public class ListenerMain extends Applet {
 
 			@Override
 			public void run() {
-
 				System.out.println("Open socket...");
 				try (
-						ServerSocket serverSocket = new ServerSocket(port);
+						ServerSocket serverSocket = new ServerSocket(port, 10, null);
 						Socket clientSocket = serverSocket.accept();
 						PrintWriter out = new PrintWriter(clientSocket.getOutputStream(), true);
 						BufferedReader in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
