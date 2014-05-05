@@ -151,10 +151,20 @@
 		this.letter = letter;
 		this.selected = false;
 		this.owner = null;
-		
+        this.words = new Object();
+        
 		this.dist = function(x, y) {
 			return Math.sqrt((this.x - x) * (this.x - x) + (this.y - y) * (this.y - y));
 		}
+        
+        this.putWord = function (wordTxt, word) {
+            if (wordTxt == null || word == null) {
+                console.log("Error: wordTxt or word is null");
+                return;
+            }
+            
+            this.words[wordTxt] = word;
+        }
 	}
 	
 	function HiveGrid(canvas, width, numCellX, numLevelY) {
@@ -450,7 +460,7 @@
 			if (wordTxt == "") return;
 			var cellFound = me.trie.get(wordTxt);
 			if (cellFound != null && cellFound.value != null) {
-				$.event.trigger({type: "foundWord", word: me.word});
+				$.event.trigger({type: "foundWord", word: me.word, wordTxt: wordTxt});
 			}
 			else {
 				$.event.trigger({type: "rejectWord", word: me.word});
@@ -469,7 +479,7 @@
 			var cell = e.cell;
 			if (me.mousedown) {
 				if (me.word.length > 0 && me.word[me.word.length - 1].dist(e.pageX - 8 , e.pageY - 8) > hiveGrid.smallestWidth * 1.2) {
-					new Audio("beep18.mp3").play();
+//					new Audio("beep18.mp3").play();
 					
 					return;
 				}
@@ -515,7 +525,8 @@
             $("#gameGrid").mousemove(this.onMouseMove);
             
             $(document).on("foundWord", function(e) {
-                var word = me.word;
+                var word = e.word;
+                var wordTxt = e.wordTxt;
                 var wrongCell = false;
                 for (var n = 0; n < word.length; n++) {
                     var cell = word[n];
@@ -526,6 +537,10 @@
                     }
                 }
                 if (!wrongCell) {
+                    for (var n = 0; n < word.length; n++) {
+                        var cell = word[n];
+                        cell.putWord(wordTxt, word);
+                    }
                     $.event.trigger({type: "selectWord"});
                 }
             });
@@ -551,6 +566,7 @@
             $(document).on("graph.cellSelected", function(e) {
                 var cell = e.cell;
                 var status = e.status;
+                console.log(cell.words);
                 hiveGrid.selectCell(cell, status);
             });
 
@@ -609,7 +625,7 @@
     
 	$(function() {
         var canvas = $("#gameGrid")[0];
-        var hiveGrid = new HiveGrid(canvas, canvas.width, 8, 3);
+        var hiveGrid = new HiveGrid(canvas, canvas.width, 12, 5);
         var gameStatus = new GameStatus(hiveGrid);
         gameStatus.initialise();
         gameStatus.checkTimer();
