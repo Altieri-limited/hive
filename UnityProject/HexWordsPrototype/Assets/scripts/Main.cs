@@ -4,11 +4,23 @@ using System;
 
 public class Main : MonoBehaviour 
 {
+	#region Unity Editor Fields
 	[SerializeField]
 	private GameObject _hexTemplate;
+	#endregion
+
+	#region Constants
 	private const float FINGER_SIZE = 0.5f;
 	private const int ROWS = 9;
 	private const int COLS = 12;
+	#endregion
+
+	#region Private Fields
+	private HexGrid _hexGrid;
+	private Camera _thisCamera;
+	private Vector3 _lastAverageTouchWorld;
+	private int _lastTouchCount;
+	#endregion
 
 	private void InitializeGrid()
 	{
@@ -62,11 +74,17 @@ public class Main : MonoBehaviour
 		return new Vector2(x, y);
 	}
 
+	#region Unity Methods Implementations
+	private void Awake()
+	{
+		_hexGrid = GetComponentInChildren<HexGrid>();
+	}
+
 	// Use this for initialization
 	void Start () 
 	{
-		Camera thisCamera = GetComponent<Camera>();
-		thisCamera.orthographicSize = Screen.height * 0.5f;
+		_thisCamera = GetComponent<Camera>();
+		_thisCamera.orthographicSize = Screen.height * 0.5f;
 		GetComponentInChildren<ScreenAdaptingQuad>().UpdateScaleToScreen(this.GetComponent<Camera>());
 		InitializeGrid();
 	}
@@ -74,6 +92,34 @@ public class Main : MonoBehaviour
 	// Update is called once per frame
 	void Update () 
 	{
-	
+		Vector2 averageTouch = Vector2.zero;
+		if(Input.touchCount != _lastTouchCount )
+		{
+			if(Input.touchCount > 1)
+			{
+				for(int i=0; i < Input.touches.Length; i++)
+				{
+					averageTouch += Input.touches[i].position;
+				}
+				averageTouch /= (float)Input.touches.Length;
+				_lastAverageTouchWorld = _thisCamera.ScreenToWorldPoint(averageTouch);
+			}
+			_lastTouchCount= Input.touchCount;
+		}
+		else
+		{
+			if(Input.touchCount > 1)
+			{
+				for(int i=0; i < Input.touches.Length; i++)
+				{
+					averageTouch += Input.touches[i].position;
+				}
+				averageTouch /= (float)Input.touches.Length;
+				Vector3 averageTouchWorld = _thisCamera.ScreenToWorldPoint(averageTouch);
+				_hexGrid.SetDeltaPosition(averageTouchWorld - _lastAverageTouchWorld);
+				_lastAverageTouchWorld = averageTouchWorld;
+			}
+		}
 	}
+	#endregion
 }
