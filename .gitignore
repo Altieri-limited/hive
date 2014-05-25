@@ -1,3 +1,11 @@
 dictionary/out/
 *~
 /.project
+Library
+Temp
+Assembly-CSharp.csproj
+Assembly-CSharp-vs.csproj
+HexWordsPrototype.sln
+HexWordsPrototype.userprefs
+HexWordsPrototype-csharp.sln
+build
