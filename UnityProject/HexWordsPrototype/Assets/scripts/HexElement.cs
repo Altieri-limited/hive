@@ -22,6 +22,11 @@ public class HexElement : MonoBehaviour
 		}
 	}
 
+	public void SetLetter(string letter)
+	{
+		GetComponentInChildren<TextMesh>().text = letter;
+	}
+
 	private void ChangeStateToTuched(GameObject touchStateTemplate)
 	{
 		if(_touchStateTemplateClone == null)

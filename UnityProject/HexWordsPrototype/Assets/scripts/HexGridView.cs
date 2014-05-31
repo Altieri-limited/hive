@@ -9,18 +9,18 @@ public class HexGridView : MonoBehaviour
 	
 	[SerializeField]
 	private GameObject _hexStatesTemplate;
-	#endregion
 
 	[SerializeField]
 	private GameObject touchedStateTemplate;
 	
 	[SerializeField]
 	private GameObject solvedStateTemplate;
+	#endregion
 
 	private HexElement[,] _grid;
 
 	private Vector3 _desiredLocalPosition;
-	private const float LERP_INV_TIME_CONST = 5.0f;//1.0 / 0.2
+	private const float LERP_INV_TIME_CONST = 5.0f;// = 1.0 / 0.2
 	private int _minXInd;
 	private int _minYInd;
 	private int _maxXInd;
@@ -111,6 +111,21 @@ public class HexGridView : MonoBehaviour
 		}
 		_hexTemplate.SetActive(false);
 		_hexStatesTemplate.SetActive(false);
+	}
+
+	public bool SetLetter(int xInd, int yInd, string letter)
+	{
+		bool result = true;
+		if(xInd < 0 || xInd > _maxXInd - _minXInd
+		   || yInd < 0 || yInd > _maxYInd - _minYInd)
+		{
+			result = false;
+		}
+		else
+		{
+			_grid[xInd, yInd].SetLetter(letter);
+		}
+		return result;
 	}
 
 	private Vector2 CalculateHexLocalPosition(int xInd, int yInd, float xSp, float ySp)
