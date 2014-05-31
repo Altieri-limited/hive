@@ -26,8 +26,8 @@ public class Main : MonoBehaviour
 		}
 		else
 		{
-			Debug.LogWarning("screen DPI not found, defaulting to 50");
-			dpi = 75.0f;
+			dpi = 150.0f;
+			Debug.LogWarning("screen DPI not found, defaulting to " + dpi);
 		}
 		float viewportWidth = FINGER_SIZE * dpi / (float)Screen.width;
 		float viewportHeight = FINGER_SIZE * dpi / (float)Screen.height;
@@ -78,9 +78,12 @@ public class Main : MonoBehaviour
 		}
 		else
 		{
-			if(Input.GetMouseButton(0))
+			if(Application.isEditor)
 			{
-				_hexGrid.Touched(_thisCamera.ScreenToWorldPoint(Input.mousePosition));
+				if(Input.GetMouseButton(0))
+				{
+					_hexGrid.Touched(_thisCamera.ScreenToWorldPoint(Input.mousePosition));
+				}
 			}
 			if(Input.touchCount == 1)
 			{
