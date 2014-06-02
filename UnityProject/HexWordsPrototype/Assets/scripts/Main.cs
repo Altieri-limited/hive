@@ -11,11 +11,12 @@ public class Main : MonoBehaviour
 	#endregion
 
 	#region Private Fields
+	private HexGridLogic _hexGridLogic;
 	private HexGridView _hexGrid;
 	private Camera _thisCamera;
 	private Vector3 _lastAverageTouchWorld;
 	private int _lastTouchCount;
-	private string[] _alphabet;
+
 	#endregion
 
 	private void InitializeGrid()
@@ -33,26 +34,7 @@ public class Main : MonoBehaviour
 		float viewportWidth = FINGER_SIZE * dpi / (float)Screen.width;
 		float viewportHeight = FINGER_SIZE * dpi / (float)Screen.height;
 		_hexGrid.InitializeGrid(_thisCamera, viewportWidth, viewportHeight, ROWS, COLS);
-		const int ALPHABET_LENGTH = 26;
-		_alphabet = new string[ALPHABET_LENGTH];
-		char c = 'A';
-		for(int i = 0; i < _alphabet.Length; i++)
-		{
-			_alphabet[i] = new string(new char[]{c});
-			c++;
-		}
-		int a = 0;
-		for(int y = 0; y < ROWS; y++)
-		{
-			for(int x = 0; x < COLS; x++)
-			{
-				_hexGrid.SetLetter(x, y, _alphabet[a++]);
-				if(a == _alphabet.Length)
-				{
-					a = 0;
-				}
-			}
-		}
+		_hexGridLogic.InitializeGrid(_hexGrid, ROWS, COLS);
 	}
 
 	#region Unity Methods Implementations
@@ -60,6 +42,7 @@ public class Main : MonoBehaviour
 	{
 		_thisCamera = GetComponent<Camera>();
 		_hexGrid = GetComponentInChildren<HexGridView>();
+		_hexGridLogic = GetComponentInChildren<HexGridLogic>();
 	}
 
 	// Use this for initialization
