@@ -82,18 +82,28 @@ public class Main : MonoBehaviour
 		}
 		else
 		{
+			Int2 gridIndices;
 			if(Application.isEditor)
 			{
 				if(Input.GetMouseButton(0))
 				{
-					_hexGrid.Touched(_thisCamera.ScreenToWorldPoint(Input.mousePosition));
+					if(_hexGrid.Touched(_thisCamera.ScreenToWorldPoint(Input.mousePosition)
+					                    , out gridIndices))
+					{
+//						Debug.Log("touched " + gridIndices.x + " " + gridIndices.y);
+						_hexGridLogic.TouchedGridElement(gridIndices);
+					}
 				}
 			}
 			if(Input.touchCount == 1)
 			{
 				if(Input.touches[0].phase == TouchPhase.Began || Input.touches[0].phase == TouchPhase.Moved)
 				{
-					_hexGrid.Touched(_thisCamera.ScreenToWorldPoint(Input.touches[0].position));
+					if(_hexGrid.Touched(_thisCamera.ScreenToWorldPoint(Input.touches[0].position) 
+					                    , out gridIndices))
+					{
+						_hexGridLogic.TouchedGridElement(gridIndices);
+					}
 				}
 			}
 		}
