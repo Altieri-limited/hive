@@ -3,6 +3,9 @@ using System.Collections;
 
 public class HexElement : MonoBehaviour 
 {
+	[SerializeField]
+	private Color solvedLetterColor = Color.cyan;
+
 	private GameObject _touchStateTemplateClone;
 
 	public void Touched(HexGridView hexGrid)
@@ -22,6 +25,16 @@ public class HexElement : MonoBehaviour
 		}
 	}
 
+	public void SetLetter(string letter)
+	{
+		GetComponentInChildren<TextMesh>().text = letter;
+	}
+
+	public void Solved()
+	{
+		GetComponentInChildren<TextMesh>().color = solvedLetterColor;
+	}
+
 	private void ChangeStateToTuched(GameObject touchStateTemplate)
 	{
 		if(_touchStateTemplateClone == null)
@@ -34,11 +47,6 @@ public class HexElement : MonoBehaviour
 			_touchStateTemplateClone.transform.localRotation = Quaternion.identity;
 			_touchStateTemplateClone.SetActive(true);
 		}
-	}
-
-	private void Solved()
-	{
-
 	}
 
 	// Use this for initialization

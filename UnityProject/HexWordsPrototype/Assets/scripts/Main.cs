@@ -11,10 +11,12 @@ public class Main : MonoBehaviour
 	#endregion
 
 	#region Private Fields
+	private HexGridLogic _hexGridLogic;
 	private HexGridView _hexGrid;
 	private Camera _thisCamera;
 	private Vector3 _lastAverageTouchWorld;
 	private int _lastTouchCount;
+
 	#endregion
 
 	private void InitializeGrid()
@@ -26,12 +28,13 @@ public class Main : MonoBehaviour
 		}
 		else
 		{
-			Debug.LogWarning("screen DPI not found, defaulting to 50");
-			dpi = 75.0f;
+			dpi = 150.0f;
+			Debug.LogWarning("screen DPI not found, defaulting to " + dpi);
 		}
 		float viewportWidth = FINGER_SIZE * dpi / (float)Screen.width;
 		float viewportHeight = FINGER_SIZE * dpi / (float)Screen.height;
 		_hexGrid.InitializeGrid(_thisCamera, viewportWidth, viewportHeight, ROWS, COLS);
+		_hexGridLogic.InitializeGrid(_hexGrid, ROWS, COLS);
 	}
 
 	#region Unity Methods Implementations
@@ -39,6 +42,7 @@ public class Main : MonoBehaviour
 	{
 		_thisCamera = GetComponent<Camera>();
 		_hexGrid = GetComponentInChildren<HexGridView>();
+		_hexGridLogic = GetComponentInChildren<HexGridLogic>();
 	}
 
 	// Use this for initialization
@@ -78,15 +82,28 @@ public class Main : MonoBehaviour
 		}
 		else
 		{
-			if(Input.GetMouseButton(0))
+			Int2 gridIndices;
+			if(Application.isEditor)
 			{
-				_hexGrid.Touched(_thisCamera.ScreenToWorldPoint(Input.mousePosition));
+				if(Input.GetMouseButton(0))
+				{
+					if(_hexGrid.Touched(_thisCamera.ScreenToWorldPoint(Input.mousePosition)
+					                    , out gridIndices))
+					{
+//						Debug.Log("touched " + gridIndices.x + " " + gridIndices.y);
+						_hexGridLogic.TouchedGridElement(gridIndices);
+					}
+				}
 			}
 			if(Input.touchCount == 1)
 			{
 				if(Input.touches[0].phase == TouchPhase.Began || Input.touches[0].phase == TouchPhase.Moved)
 				{
-					_hexGrid.Touched(_thisCamera.ScreenToWorldPoint(Input.touches[0].position));
+					if(_hexGrid.Touched(_thisCamera.ScreenToWorldPoint(Input.touches[0].position) 
+					                    , out gridIndices))
+					{
+						_hexGridLogic.TouchedGridElement(gridIndices);
+					}
 				}
 			}
 		}

@@ -1,5 +1,5 @@
 ﻿using UnityEngine;
-using System.Collections;
+using System.Collections.Generic;
 
 public class HexGridView : MonoBehaviour 
 {
@@ -9,18 +9,18 @@ public class HexGridView : MonoBehaviour
 	
 	[SerializeField]
 	private GameObject _hexStatesTemplate;
-	#endregion
 
 	[SerializeField]
 	private GameObject touchedStateTemplate;
 	
 	[SerializeField]
 	private GameObject solvedStateTemplate;
+	#endregion
 
 	private HexElement[,] _grid;
 
 	private Vector3 _desiredLocalPosition;
-	private const float LERP_INV_TIME_CONST = 5.0f;//1.0 / 0.2
+	private const float LERP_INV_TIME_CONST = 5.0f;// = 1.0 / 0.2
 	private int _minXInd;
 	private int _minYInd;
 	private int _maxXInd;
@@ -29,8 +29,14 @@ public class HexGridView : MonoBehaviour
 	private float _ySpacing;
 	private float _hexRadius;
 
-	public void Touched(Vector3 worldPosition)
+	public void ClearTouch(int xInd, int yInd)
 	{
+		_grid[xInd, yInd].ClearTouch();
+	}
+
+	public bool Touched(Vector3 worldPosition, out Int2 gridIndices)
+	{
+		gridIndices = new Int2();
 		Vector3 localPosition = this.transform.InverseTransformPoint(worldPosition);
 		float minSqHexX = -_hexRadius * 0.5f;
 		float sqHexW = 1.5f * _hexRadius;
@@ -59,8 +65,40 @@ public class HexGridView : MonoBehaviour
 			if((localPosition - hexElement.transform.localPosition).sqrMagnitude < _ySpacing * _ySpacing * 0.25f)
 			{
 				hexElement.Touched(this);
+				gridIndices.x = xInd - _minXInd;
+				gridIndices.y = yInd - _minYInd;
+				return true;
+			} 
+		}
+		return false;
+	}
+
+	public bool AreAdjacent(Int2 c1, Int2 c2)
+	{
+		c1.x += _minXInd;
+		c1.y += _minYInd;
+		c2.x += _minXInd;
+		c2.y += _minYInd;
+		bool adjacent = false;
+		if(c1.x == c2.x)
+		{
+			if(Mathf.Abs(c1.y - c2.y) == 1)
+			{
+				adjacent = true;
 			}
 		}
+		else if(Mathf.Abs(c1.x - c2.x) == 1)
+		{
+			if((c1.x & 0x1) ==0)
+			{
+				adjacent = (c1.y == c2.y || c1.y == c2.y + 1);
+			}
+			else
+			{
+				adjacent = (c1.y == c2.y || c1.y == c2.y - 1);
+			}
+		}
+		return adjacent;
 	}
 
 	public GameObject GetTouchedStateTemplate()
@@ -111,6 +149,35 @@ public class HexGridView : MonoBehaviour
 		}
 		_hexTemplate.SetActive(false);
 		_hexStatesTemplate.SetActive(false);
+	}
+
+	public bool SetSolved(List<Int2> cells)
+	{
+		foreach(Int2 cell in cells)
+		{
+			if(cell.x < 0 || cell.x > _maxXInd - _minXInd ||
+			   cell.y < 0 || cell.y > _maxYInd - _minYInd)
+			{
+				return false;
+			}
+			_grid[cell.x, cell.y].Solved();
+		}
+		return true;
+	}
+
+	public bool SetLetter(int xInd, int yInd, string letter)
+	{
+		bool result = true;
+		if(xInd < 0 || xInd > _maxXInd - _minXInd
+		   || yInd < 0 || yInd > _maxYInd - _minYInd)
+		{
+			result = false;
+		}
+		else
+		{
+			_grid[xInd, yInd].SetLetter(letter);
+		}
+		return result;
 	}
 
 	private Vector2 CalculateHexLocalPosition(int xInd, int yInd, float xSp, float ySp)

@@ -16,6 +16,16 @@ public class ScreenAdaptingQuad : MonoBehaviour
 		transform.localScale = new Vector3 (xScreenSizeWorld, yScreenSizeWorld, 1.0f);
 	}
 
+	/// <summary>
+	/// Updates the scale to screen. It uses the passed parameters to se the 3D scale
+	/// of the game object to which it is attached so that the viewport (rendered by the Camera in the parameters)
+	/// width and height are equals to those passed as parameters.
+	/// It assumes that the local x and y axes are, respectively, the horizontal and the vertical
+	/// axes and the local z is parallel to the camera forward axis.
+	/// </summary>
+	/// <param name="camera">Camera.</param>
+	/// <param name="viewportWidth">Viewport width.</param>
+	/// <param name="viewportHeight">Viewport height.</param>
 	public void UpdateScaleToScreen(Camera camera, float viewportWidth, float viewportHeight)
 	{
 		//assuming the quad is aligned to the current camera
